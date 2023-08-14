@@ -83,7 +83,7 @@ public class DataRecoverContext {
         boolean result = true;
         try {
             List<DataRecoverThread> readAheadLogList = Files
-                    .list(WalConstant.WAL_PAREND_PATH)
+                    .list(WalConstant.WAL_ROOT_PATH)
                     .map(path -> new DataRecoverThread(new ReadAheadLogImpl(path)))
                     .collect(Collectors.toList());
 

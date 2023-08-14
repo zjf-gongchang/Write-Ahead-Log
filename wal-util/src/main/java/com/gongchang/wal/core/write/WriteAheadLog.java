@@ -6,6 +6,4 @@ public interface WriteAheadLog<T> {
 
     void writeLog(T value) throws IOException;
 
-    Boolean cleanLog();
-
 }

@@ -55,7 +55,7 @@ public class AsyncSinkBase implements AsyncSink<Long, WalEntry> {
                 3000L,
                 TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(5000));
-        walEntryQueue = new LinkedBlockingDeque(10000);
+        walEntryQueue = new LinkedBlockingDeque<>(10000);
         scheduleExecutorService.scheduleWithFixedDelay(() -> {
             if(submitToSinkPool()){
                 commit(checkPointId);
@@ -71,7 +71,7 @@ public class AsyncSinkBase implements AsyncSink<Long, WalEntry> {
                 30*1000L,
                 TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(sinkQueueSize));
-        walEntryQueue = new LinkedBlockingDeque(walQueueSize);
+        walEntryQueue = new LinkedBlockingDeque<>(walQueueSize);
         scheduleExecutorService.scheduleWithFixedDelay(() -> {
             if(submitToSinkPool()){
                 commit(checkPointId);

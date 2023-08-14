@@ -3,29 +3,25 @@ package com.gongchang.wal.core.write;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class WriteAheadLogForSize extends WriteAheadLogBase {
+import com.gongchang.wal.core.base.WalConfig;
+
+public class WriteAheadLogForSize extends SyncWriteAheadLog {
 
     private static final Logger logger = LoggerFactory.getLogger(WriteAheadLogForSize.class);
 
 
-    private static final Long DEFAULT_MAX_LOG_SIZE = 1*1024*1024*1024L;
+    private AtomicLong logSize = new AtomicLong(0);
 
-    private static final Integer DEFAULT_MAX_HIS_LOG_NUM = 7;
-
-
-    private Long logSize = 0L;
-
-    private Long maxLogSize = DEFAULT_MAX_LOG_SIZE;
-
-    private Integer maxHisLogNum = DEFAULT_MAX_HIS_LOG_NUM;
+    private Long maxLogSize;
 
 
     public WriteAheadLogForSize(String logName) throws IOException {
-        super(logName);
+        this(logName, WalConfig.DEFAULT_MAX_LOG_SIZE);
     }
 
     public WriteAheadLogForSize(String logName, Long maxLogSize) throws IOException {
@@ -33,22 +29,16 @@ public class WriteAheadLogForSize extends WriteAheadLogBase {
         this.maxLogSize = maxLogSize;
     }
 
-    public WriteAheadLogForSize(String logName, Integer maxHisLogNum) throws IOException {
-        super(logName);
-        this.maxHisLogNum = maxHisLogNum;
-    }
-
-    public WriteAheadLogForSize(String logName, Long maxLogSize, Integer maxHisLogNum) throws IOException {
-        super(logName);
+    public WriteAheadLogForSize(String logName, Integer maxHisLogNum, Long maxLogSize) throws IOException {
+        super(logName, maxHisLogNum);
         this.maxLogSize = maxLogSize;
-        this.maxHisLogNum = maxHisLogNum;
     }
 
+    
     @Override
-    public Boolean whetherToCut(String value) {
-        logSize+=value.getBytes().length;
-        if(logSize>=maxLogSize){
-            logger.info("当前日志达到最大日志大小");
+    public Boolean whetherToCut(Integer logSize) {
+        if(this.logSize.addAndGet(logSize)>=maxLogSize){
+            logger.info("当前日志达到最大日志大小，切割日志");
             return true;
         }else{
             return false;
@@ -57,7 +47,7 @@ public class WriteAheadLogForSize extends WriteAheadLogBase {
 
     @Override
     public List<String> getCleanLogName() {
-        return  getDicOrderCleanLogName(maxHisLogNum);
+        return getDicOrderCleanLogName();
     }
 
     @Override
