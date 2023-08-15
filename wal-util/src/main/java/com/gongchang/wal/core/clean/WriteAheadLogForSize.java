@@ -1,6 +1,6 @@
 package com.gongchang.wal.core.clean;
 
-import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
@@ -18,12 +18,17 @@ public class WriteAheadLogForSize extends AbstractWriteAheadLogCutClean {
     private Long maxLogSize;
 
 
-    public WriteAheadLogForSize(String walFileName) throws IOException {
-        this(walFileName, WalConfig.DEFAULT_MAX_HIS_LOG_NUM);
+    public WriteAheadLogForSize(String walFileName) {
+        this(walFileName, WalConfig.DEFAULT_MAX_LOG_SIZE, WalConfig.DEFAULT_MAX_HIS_LOG_NUM);
+    }
+    
+    public WriteAheadLogForSize(String walFileName, Long maxLogSize) {
+        this(walFileName, maxLogSize, WalConfig.DEFAULT_MAX_HIS_LOG_NUM);
     }
 
-    public WriteAheadLogForSize(String walFileName, Integer maxHisLogNum) throws IOException {
+    public WriteAheadLogForSize(String walFileName, Long maxLogSize, Integer maxHisLogNum) {
         super(walFileName, maxHisLogNum);
+        this.maxLogSize = maxLogSize;
     }
 
     
@@ -36,10 +41,24 @@ public class WriteAheadLogForSize extends AbstractWriteAheadLogCutClean {
             return false;
         }
     }
+    
+    @Override
+    public List<String> getCleanLogName() {
+        return getDicOrderLogName(getMaxHisLogNum());
+    }
 
     @Override
     public String getLogPatternName() {
         return String.valueOf(System.currentTimeMillis());
     }
+
+    
+	public Long getMaxLogSize() {
+		return maxLogSize;
+	}
+
+	public void setMaxLogSize(Long maxLogSize) {
+		this.maxLogSize = maxLogSize;
+	}
 
 }

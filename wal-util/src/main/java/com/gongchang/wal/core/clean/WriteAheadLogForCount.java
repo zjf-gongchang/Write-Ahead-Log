@@ -1,6 +1,6 @@
 package com.gongchang.wal.core.clean;
 
-import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -21,12 +21,17 @@ public class WriteAheadLogForCount extends AbstractWriteAheadLogCutClean {
 	private Long maxLogCount;
 
     
-    public WriteAheadLogForCount(String walFileName) throws IOException {
-        this(walFileName, WalConfig.DEFAULT_MAX_HIS_LOG_NUM);
+    public WriteAheadLogForCount(String walFileName) {
+        this(walFileName, WalConfig.DEFAULT_MAX_LOG_COUNT, WalConfig.DEFAULT_MAX_HIS_LOG_NUM);
     }
     
-    public WriteAheadLogForCount(String walFileName, Integer maxHisLogNum) {
+    public WriteAheadLogForCount(String walFileName, Long maxLogCount) {
+        this(walFileName, maxLogCount, WalConfig.DEFAULT_MAX_HIS_LOG_NUM);
+    }
+    
+    public WriteAheadLogForCount(String walFileName, Long maxLogCount, Integer maxHisLogNum) {
 		super(walFileName, maxHisLogNum);
+		this.maxLogCount = maxLogCount;
 	}
     
 
@@ -38,6 +43,11 @@ public class WriteAheadLogForCount extends AbstractWriteAheadLogCutClean {
         }else{
             return false;
         }
+    }
+	
+	@Override
+    public List<String> getCleanLogName() {
+        return getDicOrderLogName(getMaxHisLogNum());
     }
 
     @Override

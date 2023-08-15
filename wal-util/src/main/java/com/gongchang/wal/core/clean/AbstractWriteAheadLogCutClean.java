@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.gongchang.wal.core.base.PathUtils;
+import com.gongchang.wal.core.base.WalConfig;
 
 public abstract class AbstractWriteAheadLogCutClean implements WriteAheadLogCutClean {
 
@@ -28,6 +29,10 @@ public abstract class AbstractWriteAheadLogCutClean implements WriteAheadLogCutC
 	
 	private Integer maxHisLogNum;
 	
+	
+	public AbstractWriteAheadLogCutClean(String walFileName) {
+		this(walFileName, WalConfig.DEFAULT_MAX_HIS_LOG_NUM);
+	}
 	
 	public AbstractWriteAheadLogCutClean(String walFileName, Integer maxHisLogNum) {
 		super();
@@ -53,7 +58,7 @@ public abstract class AbstractWriteAheadLogCutClean implements WriteAheadLogCutC
 	@Override
 	public Boolean cleanLog(Path logParentPath) {
 		try {
-			List<String> cleanLogNameList = getCleanLogName(maxHisLogNum);
+			List<String> cleanLogNameList = getCleanLogName();
 			for (String cleanLogname : cleanLogNameList) {
 				Files.delete(Paths.get(logParentPath.toString(), cleanLogname));
 			}
@@ -79,15 +84,7 @@ public abstract class AbstractWriteAheadLogCutClean implements WriteAheadLogCutC
 	
 	public abstract String getLogPatternName();
 	
-	/**
-	 * 此方法可以被子类覆盖，自定义实现获取自己的日志清理列表
-	 * 
-	 * @param maxHisLogNum 保留的最大历史日志数量
-	 * @return 需要清理的日志列表
-	 */
-    public List<String> getCleanLogName(Integer maxHisLogNum) {
-        return getDicOrderLogName(maxHisLogNum);
-    }
+    public abstract List<String> getCleanLogName();
 	
 	public List<String> getDicOrderLogName(Integer maxHisLogNum) {
         Path logParentPath = PathUtils.getWalParentPath(walFileName);
@@ -118,4 +115,21 @@ public abstract class AbstractWriteAheadLogCutClean implements WriteAheadLogCutC
         return Collections.emptyList();
     }
 
+	
+	public String getWalFileName() {
+		return walFileName;
+	}
+
+	public void setWalFileName(String walFileName) {
+		this.walFileName = walFileName;
+	}
+
+	public Integer getMaxHisLogNum() {
+		return maxHisLogNum;
+	}
+
+	public void setMaxHisLogNum(Integer maxHisLogNum) {
+		this.maxHisLogNum = maxHisLogNum;
+	}
+	
 }
