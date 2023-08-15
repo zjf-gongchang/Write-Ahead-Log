@@ -1,8 +1,5 @@
 package com.gongchang.wal.core.base;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 public class WalConstant {
 
     private WalConstant(){}
@@ -10,6 +7,6 @@ public class WalConstant {
     /**
      * 预写日志父路径
      */
-    public static final Path WAL_ROOT_PATH = Paths.get(System.getProperty("user.dir") ,"wal");
+    public static final String WAL_ROOT_CATALOG = "wal";
 
 }

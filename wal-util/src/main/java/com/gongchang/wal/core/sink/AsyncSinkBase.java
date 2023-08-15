@@ -24,8 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import com.gongchang.wal.core.base.WalConfig;
 import com.gongchang.wal.core.base.WalEntry;
+import com.gongchang.wal.core.write.SyncWriteAheadLog;
 import com.gongchang.wal.core.write.WriteAheadLog;
-import com.gongchang.wal.core.write.WriteAheadLogForSize;
 
 public class AsyncSinkBase implements AsyncSink<Long, WalEntry> {
 
@@ -48,7 +48,7 @@ public class AsyncSinkBase implements AsyncSink<Long, WalEntry> {
 
 
     protected AsyncSinkBase() throws IOException {
-        rwal = new WriteAheadLogForSize("rwal");
+        rwal = new SyncWriteAheadLog("rwal");
         sinkExecutorService = new ThreadPoolExecutor(
                 1,
                 10,
@@ -64,7 +64,7 @@ public class AsyncSinkBase implements AsyncSink<Long, WalEntry> {
     }
 
     protected AsyncSinkBase(String logName, Integer sinkInitThreadNum, Integer sinkMaxThreadNum, Integer sinkQueueSize, Integer walQueueSize, Long checkPointInterval) throws IOException {
-        rwal = new WriteAheadLogForSize(logName);
+        rwal = new SyncWriteAheadLog(logName);
         sinkExecutorService = new ThreadPoolExecutor(
                 sinkInitThreadNum,
                 sinkMaxThreadNum,

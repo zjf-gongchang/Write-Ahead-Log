@@ -16,14 +16,14 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.gongchang.wal.core.base.WalConstant;
+import com.gongchang.wal.core.base.PathUtils;
 import com.gongchang.wal.core.base.WalEntry;
 import com.gongchang.wal.core.read.ReadAheadLog;
 import com.gongchang.wal.core.read.ReadAheadLogImpl;
+import com.gongchang.wal.core.redo.AbstractRetryDoRecover;
 import com.gongchang.wal.core.redo.RetryDo;
 import com.gongchang.wal.core.redo.RetryDoRecover;
 import com.gongchang.wal.core.redo.RetryDoRecoverBy;
-import com.gongchang.wal.core.sink.AbstractRetryDoRecover;
 
 /**
  * 数据恢复上下文
@@ -83,7 +83,7 @@ public class DataRecoverContext {
         boolean result = true;
         try {
             List<DataRecoverThread> readAheadLogList = Files
-                    .list(WalConstant.WAL_ROOT_PATH)
+                    .list(PathUtils.getWalRootPath())
                     .map(path -> new DataRecoverThread(new ReadAheadLogImpl(path)))
                     .collect(Collectors.toList());
 

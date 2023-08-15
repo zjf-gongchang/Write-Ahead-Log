@@ -1,19 +1,20 @@
-package com.gongchang.wal.core.write;
+package com.gongchang.wal.core.clean;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.gongchang.wal.core.base.WalConfig;
+
 /**
  * 按天切分日志
  */
-public class WriteAheadLogForDay extends SyncWriteAheadLog {
+public class WriteAheadLogForDay extends AbstractWriteAheadLogCutClean {
 
 	private static final Logger logger = LoggerFactory.getLogger(WriteAheadLogForDay.class);
 	
@@ -21,13 +22,12 @@ public class WriteAheadLogForDay extends SyncWriteAheadLog {
 	private LocalDateTime curDayMaxDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
 	
 	
-    public WriteAheadLogForDay(String logName) throws IOException {
-        super(logName);
+    public WriteAheadLogForDay(String walFileName) throws IOException {
+        this(walFileName, WalConfig.DEFAULT_MAX_HIS_LOG_NUM);
     }
-    
 
-    public WriteAheadLogForDay(String logName, Integer maxHisLogNum) {
-		super(logName, maxHisLogNum);
+    public WriteAheadLogForDay(String walFileName, Integer maxHisLogNum) {
+		super(walFileName, maxHisLogNum);
 	}
 
 
@@ -40,12 +40,7 @@ public class WriteAheadLogForDay extends SyncWriteAheadLog {
     }
 
     @Override
-    public List<String> getCleanLogName() {
-    	return getDicOrderCleanLogName();
-    }
-
-    @Override
-    public String getNextLogName() {
+    public String getLogPatternName() {
         return curDayMaxDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
     }
     
@@ -55,5 +50,5 @@ public class WriteAheadLogForDay extends SyncWriteAheadLog {
 		String format = localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 		System.out.println(format);
 	}
-    
+
 }

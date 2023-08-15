@@ -1,7 +1,6 @@
-package com.gongchang.wal.core.write;
+package com.gongchang.wal.core.clean;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -12,7 +11,7 @@ import com.gongchang.wal.core.base.WalConfig;
 /**
  * 按统计条数切分日志
  */
-public class WriteAheadLogForCount extends SyncWriteAheadLog {
+public class WriteAheadLogForCount extends AbstractWriteAheadLogCutClean {
 
 	private static final Logger logger = LoggerFactory.getLogger(WriteAheadLogForCount.class);
 	
@@ -22,20 +21,14 @@ public class WriteAheadLogForCount extends SyncWriteAheadLog {
 	private Long maxLogCount;
 
     
-    public WriteAheadLogForCount(String logName) throws IOException {
-        this(logName, WalConfig.DEFAULT_MAX_LOG_COUNT);
+    public WriteAheadLogForCount(String walFileName) throws IOException {
+        this(walFileName, WalConfig.DEFAULT_MAX_HIS_LOG_NUM);
     }
     
-    public WriteAheadLogForCount(String logName, Long maxLogCount) {
-		super(logName);
-		this.maxLogCount = maxLogCount;
+    public WriteAheadLogForCount(String walFileName, Integer maxHisLogNum) {
+		super(walFileName, maxHisLogNum);
 	}
     
-	public WriteAheadLogForCount(String logName, Integer maxHisLogNum, Long maxLogCount) {
-		super(logName, maxHisLogNum);
-		this.maxLogCount = maxLogCount;
-	}
-
 
 	@Override
     public Boolean whetherToCut(Integer logSize) {
@@ -48,13 +41,8 @@ public class WriteAheadLogForCount extends SyncWriteAheadLog {
     }
 
     @Override
-    public List<String> getCleanLogName() {
-    	return getDicOrderCleanLogName();
-    }
-
-    @Override
-    public String getNextLogName() {
+    public String getLogPatternName() {
     	return String.valueOf(System.currentTimeMillis());
     }
-    
+
 }

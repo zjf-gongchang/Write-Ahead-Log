@@ -1,12 +1,9 @@
-package com.gongchang.wal.core.sink;
+package com.gongchang.wal.core.redo;
 
 import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.gongchang.wal.core.redo.RetryDo;
-import com.gongchang.wal.core.redo.RetryDoRecover;
 
 
 public abstract class AbstractRetryDoRecover implements RetryDoRecover<String> {
