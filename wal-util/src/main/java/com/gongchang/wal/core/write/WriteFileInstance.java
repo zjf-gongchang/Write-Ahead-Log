@@ -1,5 +1,6 @@
 package com.gongchang.wal.core.write;
 
+import java.io.IOException;
 import java.util.function.Supplier;
 
 import com.gongchang.wal.core.clean.AbstractWriteAheadLogCutClean;
@@ -8,13 +9,13 @@ import com.gongchang.wal.core.clean.WriteAheadLogForSize;
 import com.gongchang.wal.core.clean.WriteAheadLogForTime;
 import com.gongchang.wal.core.clean.WriteAheadLogForTime.TimeUnit;
 
-public class WriteStrInstance {
+public class WriteFileInstance implements WriteInstance<String> {
 	
 	
 	WriteAheadLog<String> writeAheadLog;
 	
 	
-	private WriteStrInstance(WriteAheadLog<String> writeAheadLog){
+	private WriteFileInstance(WriteAheadLog<String> writeAheadLog){
 		this.writeAheadLog = writeAheadLog;
 	}
 	
@@ -23,12 +24,12 @@ public class WriteStrInstance {
 		return writeAheadLog;
 	}
 
-	public WriteInstanceBuilder getWriteInstanceBuilder(String logName){
+	public static WriteInstanceBuilder getWriteInstanceBuilder(String logName){
 		return new WriteInstanceBuilder(logName);
 	}
 	
 	
-	private static class WriteInstanceBuilder{
+	public static class WriteInstanceBuilder{
 		
 		private String logName;
 		
@@ -44,7 +45,7 @@ public class WriteStrInstance {
 			this.logName = logName;
 		}
 
-		public WriteStrInstance build(){
+		public WriteFileInstance build(){
 			AbstractWriteAheadLogCutClean abstractwalcc = abstractWalccGetSupplier.get();
 			if(maxHisLogNum!=-1){
 				abstractwalcc.setMaxHisLogNum(maxHisLogNum);
@@ -57,45 +58,56 @@ public class WriteStrInstance {
 				writeAheadLog = new AsyncWriteAheadLog(logName, abstractwalcc);
 			}
 			
-			return new WriteStrInstance(writeAheadLog);
+			return new WriteFileInstance(writeAheadLog);
 		}
 		
 
-		public void setMaxHisLogNum(Integer maxHisLogNum) {
+		public WriteInstanceBuilder setMaxHisLogNum(Integer maxHisLogNum) {
 			this.maxHisLogNum = maxHisLogNum;
+			return this;
 		}
 
-		public void enableLogCutForSize(Long maxLogSize) {
+		public WriteInstanceBuilder enableLogCutForSize(Long maxLogSize) {
 			abstractWalccGetSupplier = new Supplier<AbstractWriteAheadLogCutClean>() {
 				@Override
 				public AbstractWriteAheadLogCutClean get() {
 					return new WriteAheadLogForSize(logName, maxLogSize);
 				}
 			};
+			return this;
 		}
 
-		public void enableLogCutForCount(Long maxLogCount) {
+		public WriteInstanceBuilder enableLogCutForCount(Long maxLogCount) {
 			abstractWalccGetSupplier = new Supplier<AbstractWriteAheadLogCutClean>() {
 				@Override
 				public AbstractWriteAheadLogCutClean get() {
 					return new WriteAheadLogForCount(logName, maxLogCount);
 				}
 			};
+			return this;
 		}
 
-		public void enableLogCutForTime(TimeUnit maxTimeUnit) {
+		public WriteInstanceBuilder enableLogCutForTime(TimeUnit maxTimeUnit) {
 			abstractWalccGetSupplier = new Supplier<AbstractWriteAheadLogCutClean>() {
 				@Override
 				public AbstractWriteAheadLogCutClean get() {
 					return new WriteAheadLogForTime(logName, maxTimeUnit);
 				}
 			};
+			return this;
 		}
 
-		public void enableASync() {
+		public WriteInstanceBuilder enableASync() {
 			this.isSync = false;
+			return this;
 		}
 		
+	}
+
+
+	@Override
+	public void writeLog(String value) throws IOException {
+		writeAheadLog.writeLog(value);
 	}
 	
 }

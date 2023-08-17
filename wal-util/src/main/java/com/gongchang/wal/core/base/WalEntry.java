@@ -2,7 +2,7 @@ package com.gongchang.wal.core.base;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.gongchang.DataRecoverContext;
+import com.gongchang.wal.core.read.DataRecoverContext;
 import com.gongchang.wal.core.redo.RetryDo;
 import com.gongchang.wal.core.redo.RetryDoRecover;
 

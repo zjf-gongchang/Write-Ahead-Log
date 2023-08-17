@@ -13,9 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -24,15 +22,16 @@ import org.slf4j.LoggerFactory;
 
 import com.gongchang.wal.core.base.WalConfig;
 import com.gongchang.wal.core.base.WalEntry;
-import com.gongchang.wal.core.write.SyncWriteAheadLog;
-import com.gongchang.wal.core.write.WriteAheadLog;
+import com.gongchang.wal.core.write.WriteInstance;
 
 public class AsyncSinkBase implements AsyncSink<Long, WalEntry> {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncSinkBase.class);
 
 
-    private WriteAheadLog rwal;
+    private SinkConfig sinkConfig;
+    
+    private WriteInstance writeInstance;
 
     private final ScheduledExecutorService scheduleExecutorService = Executors.newSingleThreadScheduledExecutor();
 
@@ -47,36 +46,19 @@ public class AsyncSinkBase implements AsyncSink<Long, WalEntry> {
     private AtomicLong logSize = new AtomicLong(0);
 
 
-    protected AsyncSinkBase() throws IOException {
-        rwal = new SyncWriteAheadLog("rwal");
-        sinkExecutorService = new ThreadPoolExecutor(
-                1,
-                10,
-                3000L,
-                TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(5000));
-        walEntryQueue = new LinkedBlockingDeque<>(10000);
-        scheduleExecutorService.scheduleWithFixedDelay(() -> {
-            if(submitToSinkPool()){
-                commit(checkPointId);
-            }
-        },10*60, 10*60, TimeUnit.SECONDS);
+    protected AsyncSinkBase() {
+    	this(SinkConfig.getSinkConfigBuilder("wal").build());
     }
 
-    protected AsyncSinkBase(String logName, Integer sinkInitThreadNum, Integer sinkMaxThreadNum, Integer sinkQueueSize, Integer walQueueSize, Long checkPointInterval) throws IOException {
-        rwal = new SyncWriteAheadLog(logName);
-        sinkExecutorService = new ThreadPoolExecutor(
-                sinkInitThreadNum,
-                sinkMaxThreadNum,
-                30*1000L,
-                TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(sinkQueueSize));
-        walEntryQueue = new LinkedBlockingDeque<>(walQueueSize);
-        scheduleExecutorService.scheduleWithFixedDelay(() -> {
+    protected AsyncSinkBase(SinkConfig sinkConfig) {
+    	this.sinkConfig = sinkConfig;
+    	this.writeInstance = sinkConfig.getWriteInstance();
+    	this.sinkExecutorService = sinkConfig.getSinkExecutorService();
+    	this.scheduleExecutorService.scheduleWithFixedDelay(() -> {
             if(submitToSinkPool()){
                 commit(checkPointId);
             }
-        },checkPointInterval, checkPointInterval, TimeUnit.SECONDS);
+        }, sinkConfig.getCheckPointInterval(), sinkConfig.getCheckPointInterval(), TimeUnit.SECONDS);
     }
 
 
@@ -86,7 +68,7 @@ public class AsyncSinkBase implements AsyncSink<Long, WalEntry> {
 
         // 写预写日志
         try {
-            rwal.writeLog(walEntry.metaToMementoStr());
+        	writeInstance.writeLog(walEntry.metaToMementoStr());
         } catch (IOException e) {
             return false;
         }
@@ -164,9 +146,13 @@ public class AsyncSinkBase implements AsyncSink<Long, WalEntry> {
             return redo;
         }
     }
+    
+    public SinkConfig getSinkConfig() {
+		return sinkConfig;
+	}
+    
 
-
-    public static void main(String[] args) {
+	public static void main(String[] args) {
         Path checkPointPath = Paths.get(System.getProperty("user.dir"), "checkpoint.txt");
         try {
             Files.write(checkPointPath, String.valueOf("hkkk").getBytes(),StandardOpenOption.CREATE);
