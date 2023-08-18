@@ -20,9 +20,9 @@ import com.gongchang.wal.core.base.WalConfig;
 import com.gongchang.wal.core.clean.WriteAheadLogCutClean;
 import com.gongchang.wal.exception.WALWriteException;
 
-public class AsyncWriteAheadLog extends AbstractWriteAheadLog<String> {
+public class AsyncWriteAheadLogToFile extends AbstractWriteAheadLogToFile<String> {
 
-	private static final Logger logger = LoggerFactory.getLogger(AsyncWriteAheadLog.class);
+	private static final Logger logger = LoggerFactory.getLogger(AsyncWriteAheadLogToFile.class);
 	
 	
 	private final LinkedBlockingQueue<String> cacheQueue = new LinkedBlockingQueue<>(WalConfig.ASYNC_WRITE_LOG_QUEUE_SIZE);
@@ -36,11 +36,11 @@ public class AsyncWriteAheadLog extends AbstractWriteAheadLog<String> {
 	private WriteAheadLogCutClean walcc;
 	
 	
-	public AsyncWriteAheadLog(String logName) {
+	public AsyncWriteAheadLogToFile(String logName) {
 		super(logName);
 	}
 
-	public AsyncWriteAheadLog(String logName, WriteAheadLogCutClean walcc) {
+	public AsyncWriteAheadLogToFile(String logName, WriteAheadLogCutClean walcc) {
 		super(logName);
 		this.walcc = walcc;
 	}
@@ -98,20 +98,20 @@ public class AsyncWriteAheadLog extends AbstractWriteAheadLog<String> {
 	
 	private static class WriteLogThread implements Runnable{
 
-		private AsyncWriteAheadLog asyncWriteAheadLog;
+		private AsyncWriteAheadLogToFile asyncWriteAheadLogToFile;
 		
 		
-		public WriteLogThread( AsyncWriteAheadLog asyncWriteAheadLog) {
+		public WriteLogThread( AsyncWriteAheadLogToFile asyncWriteAheadLogToFile) {
 			super();
-			this.asyncWriteAheadLog = asyncWriteAheadLog;
+			this.asyncWriteAheadLogToFile = asyncWriteAheadLogToFile;
 		}
 
 
 		@Override
 		public void run() {
 			try {
-				while(asyncWriteAheadLog.getCacheQueueSize()>WalConfig.ASYNC_WRITE_LOG_BATCH_SIZE/2){
-					asyncWriteAheadLog.batchWriteLog();
+				while(asyncWriteAheadLogToFile.getCacheQueueSize()>WalConfig.ASYNC_WRITE_LOG_BATCH_SIZE/2){
+					asyncWriteAheadLogToFile.batchWriteLog();
 				}
 			} catch (IOException e) {
 				logger.error("批量写日志异常", e);

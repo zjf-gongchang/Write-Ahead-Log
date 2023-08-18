@@ -1,4 +1,4 @@
-package com.gongchang.wal.core.sink;
+package com.gongchang.wal.core.bus;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +14,7 @@ public class AsyncSinkManager {
     private static final Logger logger = LoggerFactory.getLogger(AsyncSinkManager.class);
 
     
-    private static final Map<SinkConfig, AsyncSink<?,?>> asyncSinkMap = new HashMap<SinkConfig, AsyncSink<?,?>>();
+    private static final Map<SinkConfig, AsyncSink> asyncSinkMap = new HashMap<SinkConfig, AsyncSink>();
 
     
     private SinkConfig defaultSinkConfig;
@@ -30,7 +30,7 @@ public class AsyncSinkManager {
     }
     
 
-    public synchronized AsyncSink<?,?> getDefaultAsyncSink(){
+    public synchronized AsyncSink getDefaultAsyncSink(){
     	if(defaultSinkConfig==null){
     		AsyncSinkBase asyncSinkBase = new AsyncSinkBase();
     		asyncSinkMap.put(asyncSinkBase.getSinkConfig(), asyncSinkBase);
@@ -39,8 +39,8 @@ public class AsyncSinkManager {
         return asyncSinkMap.get(defaultSinkConfig);
     }
     
-    public synchronized AsyncSink<?,?> getAsyncSinkByConfig(SinkConfig sinkConfig){
-    	AsyncSink<?, ?> asyncSink = asyncSinkMap.get(defaultSinkConfig);
+    public synchronized AsyncSink getAsyncSinkByConfig(SinkConfig sinkConfig){
+    	AsyncSink asyncSink = asyncSinkMap.get(defaultSinkConfig);
     	if(asyncSink==null){
     		AsyncSinkBase asyncSinkBase = new AsyncSinkBase(sinkConfig);
     		asyncSinkMap.put(asyncSinkBase.getSinkConfig(), asyncSinkBase);

@@ -1,7 +1,7 @@
 package com.gongchang.wal.core.redo;
 
-public interface RetryDoRecover<T> {
+public interface RetryDoRecover {
 
-    RetryDo recover(T t);
+    RetryDo recover(String str);
 
 }

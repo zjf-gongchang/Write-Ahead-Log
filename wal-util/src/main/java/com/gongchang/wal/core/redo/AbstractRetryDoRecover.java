@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public abstract class AbstractRetryDoRecover implements RetryDoRecover<String> {
+public abstract class AbstractRetryDoRecover implements RetryDoRecover {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractRetryDoRecover.class);
 

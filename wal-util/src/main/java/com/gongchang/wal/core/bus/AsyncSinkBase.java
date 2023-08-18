@@ -1,4 +1,4 @@
-package com.gongchang.wal.core.sink;
+package com.gongchang.wal.core.bus;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,7 +24,7 @@ import com.gongchang.wal.core.base.WalConfig;
 import com.gongchang.wal.core.base.WalEntry;
 import com.gongchang.wal.core.write.WriteInstance;
 
-public class AsyncSinkBase implements AsyncSink<Long, WalEntry> {
+public class AsyncSinkBase implements AsyncSink {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncSinkBase.class);
 
@@ -61,14 +61,12 @@ public class AsyncSinkBase implements AsyncSink<Long, WalEntry> {
         }, sinkConfig.getCheckPointInterval(), sinkConfig.getCheckPointInterval(), TimeUnit.SECONDS);
     }
 
-
-    @Override
-    public Boolean preCommit(WalEntry walEntry) {
-        // 数据合法性校验，校验不通过则返回false
+    public Boolean sink(WalEntry walEntry){
+    	// 数据合法性校验，校验不通过则返回false
 
         // 写预写日志
         try {
-        	writeInstance.writeLog(walEntry.metaToMementoStr());
+        	writeInstance.writeLog(walEntry);
         } catch (IOException e) {
             return false;
         }
@@ -82,7 +80,6 @@ public class AsyncSinkBase implements AsyncSink<Long, WalEntry> {
         return addResult;
     }
 
-    @Override
     public Boolean commit(Long checkPointId) {
         // 记录检查点信息
         Path checkPointPath = Paths.get(System.getProperty("user.dir"), "wal", "checkpoint.txt");
@@ -150,15 +147,5 @@ public class AsyncSinkBase implements AsyncSink<Long, WalEntry> {
     public SinkConfig getSinkConfig() {
 		return sinkConfig;
 	}
-    
-
-	public static void main(String[] args) {
-        Path checkPointPath = Paths.get(System.getProperty("user.dir"), "checkpoint.txt");
-        try {
-            Files.write(checkPointPath, String.valueOf("hkkk").getBytes(),StandardOpenOption.CREATE);
-        } catch (IOException e) {
-            logger.error("持久化检查点异常：", e);
-        }
-    }
 
 }

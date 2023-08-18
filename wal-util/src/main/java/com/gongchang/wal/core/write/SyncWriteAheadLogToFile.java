@@ -17,19 +17,19 @@ import com.gongchang.wal.core.clean.WriteAheadLogCutClean;
 /**
  * 请求预写日志Base类
  */
-public class SyncWriteAheadLog extends AbstractWriteAheadLog<String> {
+public class SyncWriteAheadLogToFile extends AbstractWriteAheadLogToFile<String> {
 
-    private static final Logger logger = LoggerFactory.getLogger(SyncWriteAheadLog.class);
+    private static final Logger logger = LoggerFactory.getLogger(SyncWriteAheadLogToFile.class);
     
     
     private WriteAheadLogCutClean walcc;
     
     
-    public SyncWriteAheadLog(String logName) {
+    public SyncWriteAheadLogToFile(String logName) {
 		super(logName);
 	}
     
-	public SyncWriteAheadLog(String logName, WriteAheadLogCutClean walcc) {
+	public SyncWriteAheadLogToFile(String logName, WriteAheadLogCutClean walcc) {
 		super(logName);
 		this.walcc = walcc;
 	}

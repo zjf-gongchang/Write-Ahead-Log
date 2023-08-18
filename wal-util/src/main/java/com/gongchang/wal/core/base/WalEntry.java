@@ -2,7 +2,7 @@ package com.gongchang.wal.core.base;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.gongchang.wal.core.read.DataRecoverContext;
+import com.gongchang.wal.core.bus.RecoverContext;
 import com.gongchang.wal.core.redo.RetryDo;
 import com.gongchang.wal.core.redo.RetryDoRecover;
 
@@ -72,7 +72,7 @@ public class WalEntry {
 
 
         public WalEntry metaToWalEntry(){
-            RetryDoRecover retryDoRecover = DataRecoverContext.getRecoverContext().requestRetryDoRecover(retryDoRecoverBy);
+            RetryDoRecover retryDoRecover = RecoverContext.getInstance().requestRetryDoRecover(retryDoRecoverBy);
             RetryDo retryDo = retryDoRecover.recover(retryDoClassName);
             WalEntry walEntry = new WalEntry(retryDo, dada, createTime);
             return walEntry;

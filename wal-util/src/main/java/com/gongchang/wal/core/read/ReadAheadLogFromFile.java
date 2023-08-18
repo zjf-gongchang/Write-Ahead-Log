@@ -1,8 +1,5 @@
 package com.gongchang.wal.core.read;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,24 +7,27 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 读预写日志
  */
-public class ReadAheadLogImpl implements ReadAheadLog {
+public class ReadAheadLogFromFile implements ReadAheadLog<String> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ReadAheadLogImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ReadAheadLogFromFile.class);
 
 
     private Path walPath;
 
-    public ReadAheadLogImpl(Path walPath) {
+    public ReadAheadLogFromFile(Path walPath) {
         this.walPath = walPath;
     }
 
 
     @Override
     public Iterator<String> readLog() throws IOException {
-        Iterator iterator = new Iterator() {
+        Iterator<String> iterator = new Iterator<String>() {
             private List<Path> pathList = new LinkedList<>();
             Iterator<String> curLines;
 
@@ -62,7 +62,7 @@ public class ReadAheadLogImpl implements ReadAheadLog {
             }
 
             @Override
-            public Object next() {
+            public String next() {
                 return curLines.next();
             }
 

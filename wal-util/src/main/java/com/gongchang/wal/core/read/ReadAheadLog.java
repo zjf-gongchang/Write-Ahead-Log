@@ -5,6 +5,6 @@ import java.util.Iterator;
 
 public interface ReadAheadLog<T> {
 
-    Iterator<String> readLog() throws IOException;
+    Iterator<T> readLog() throws IOException;
 
 }

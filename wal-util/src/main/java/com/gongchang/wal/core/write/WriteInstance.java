@@ -2,8 +2,10 @@ package com.gongchang.wal.core.write;
 
 import java.io.IOException;
 
-public interface WriteInstance<T> {
+import com.gongchang.wal.core.base.WalEntry;
 
-	void writeLog(T value) throws IOException;
+public interface WriteInstance {
+
+	void writeLog(WalEntry walEntry) throws IOException;
 	
 }

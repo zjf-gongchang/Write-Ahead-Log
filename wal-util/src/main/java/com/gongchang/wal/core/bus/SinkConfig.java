@@ -1,4 +1,4 @@
-package com.gongchang.wal.core.sink;
+package com.gongchang.wal.core.bus;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -12,7 +12,7 @@ import com.gongchang.wal.core.write.WriteInstance;
 
 public class SinkConfig {
 
-	private WriteInstance<?> writeInstance;
+	private WriteInstance writeInstance;
 	
 	private ExecutorService sinkExecutorService;
 
@@ -21,7 +21,7 @@ public class SinkConfig {
     private Long checkPointInterval;
     
 	
-	public SinkConfig(WriteInstance<?> writeInstance, ExecutorService sinkExecutorService,
+	public SinkConfig(WriteInstance writeInstance, ExecutorService sinkExecutorService,
 			LinkedBlockingDeque<WalEntry> walEntryQueue, Long checkPointInterval) {
 		super();
 		this.writeInstance = writeInstance;
@@ -35,13 +35,13 @@ public class SinkConfig {
 		return new SinkConfigBuilder(logName);
 	}
 	
-	public static SinkConfigBuilder getSinkConfigBuilder(WriteInstance<?> writeInstance){
+	public static SinkConfigBuilder getSinkConfigBuilder(WriteInstance writeInstance){
 		return new SinkConfigBuilder(writeInstance);
 	}
 	
 	public static class SinkConfigBuilder{
 		
-		private WriteInstance<?> writeInstance;
+		private WriteInstance writeInstance;
 		
 		private Integer sinkPoolInitThreadNum = 1;
 		
@@ -61,7 +61,7 @@ public class SinkConfig {
 			writeInstance = WriteFileInstance.getWriteInstanceBuilder(logName).enableLogCutForSize(Long.valueOf(1*1024*1024*1024)).build();
 		}
 		
-		public SinkConfigBuilder(WriteInstance<?> writeInstance) {
+		public SinkConfigBuilder(WriteInstance writeInstance) {
 			super();
 			this.writeInstance = writeInstance;
 		}
@@ -112,7 +112,7 @@ public class SinkConfig {
 	}
 	
 
-	public WriteInstance<?> getWriteInstance() {
+	public WriteInstance getWriteInstance() {
 		return writeInstance;
 	}
 

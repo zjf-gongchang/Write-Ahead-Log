@@ -10,15 +10,15 @@ import org.slf4j.LoggerFactory;
 import com.gongchang.wal.core.base.PathUtils;
 import com.gongchang.wal.exception.WALInitCheckException;
 
-public abstract class AbstractWriteAheadLog<T> implements WriteAheadLog<T> {
+public abstract class AbstractWriteAheadLogToFile<T> implements WriteAheadLog<T> {
 
-	private static final Logger logger = LoggerFactory.getLogger(AbstractWriteAheadLog.class);
+	private static final Logger logger = LoggerFactory.getLogger(AbstractWriteAheadLogToFile.class);
 
 	
 	private String logName;
 	
 	
-	public AbstractWriteAheadLog(String logName) {
+	public AbstractWriteAheadLogToFile(String logName) {
 		super();
 		this.logName = logName;
 		

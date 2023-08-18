@@ -3,13 +3,14 @@ package com.gongchang.wal.core.write;
 import java.io.IOException;
 import java.util.function.Supplier;
 
+import com.gongchang.wal.core.base.WalEntry;
 import com.gongchang.wal.core.clean.AbstractWriteAheadLogCutClean;
 import com.gongchang.wal.core.clean.WriteAheadLogForCount;
 import com.gongchang.wal.core.clean.WriteAheadLogForSize;
 import com.gongchang.wal.core.clean.WriteAheadLogForTime;
 import com.gongchang.wal.core.clean.WriteAheadLogForTime.TimeUnit;
 
-public class WriteFileInstance implements WriteInstance<String> {
+public class WriteFileInstance implements WriteInstance {
 	
 	
 	WriteAheadLog<String> writeAheadLog;
@@ -53,9 +54,9 @@ public class WriteFileInstance implements WriteInstance<String> {
 			
 			WriteAheadLog<String> writeAheadLog;
 			if(isSync){
-				writeAheadLog = new SyncWriteAheadLog(logName, abstractwalcc);
+				writeAheadLog = new SyncWriteAheadLogToFile(logName, abstractwalcc);
 			}else{
-				writeAheadLog = new AsyncWriteAheadLog(logName, abstractwalcc);
+				writeAheadLog = new AsyncWriteAheadLogToFile(logName, abstractwalcc);
 			}
 			
 			return new WriteFileInstance(writeAheadLog);
@@ -106,8 +107,8 @@ public class WriteFileInstance implements WriteInstance<String> {
 
 
 	@Override
-	public void writeLog(String value) throws IOException {
-		writeAheadLog.writeLog(value);
+	public void writeLog(WalEntry walEntry) throws IOException {
+		writeAheadLog.writeLog(walEntry.metaToMementoStr());
 	}
 	
 }
