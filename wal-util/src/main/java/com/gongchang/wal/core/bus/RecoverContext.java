@@ -1,7 +1,5 @@
 package com.gongchang.wal.core.bus;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -16,14 +14,13 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.gongchang.wal.core.base.PathUtils;
 import com.gongchang.wal.core.base.WalEntry;
-import com.gongchang.wal.core.read.ReadFileInstance;
 import com.gongchang.wal.core.read.ReadInstance;
 import com.gongchang.wal.core.redo.AbstractRetryDoRecover;
 import com.gongchang.wal.core.redo.RetryDo;
 import com.gongchang.wal.core.redo.RetryDoRecover;
 import com.gongchang.wal.core.redo.RetryDoRecoverBy;
+import com.gongchang.wal.exception.WalRecoverException;
 
 public class RecoverContext {
 	
@@ -32,8 +29,6 @@ public class RecoverContext {
 
 	private Map<RetryDoRecoverBy, RetryDoRecover> retryDoRecoverMap = new HashMap<>();
 
-	private RecoverConfig recoverConfig;
-	
 	private static final RecoverContext recoverContext = new RecoverContext();
 
 	static {
@@ -44,10 +39,10 @@ public class RecoverContext {
                     return (RetryDo)clazz.newInstance();
                 } catch (InstantiationException e) {
                     logger.error("通过反射获取实例异常", e);
-                    throw new RuntimeException("通过反射获取实例异常", e);
+                    throw new WalRecoverException("通过反射获取实例异常", e);
                 } catch (IllegalAccessException e) {
                     logger.error("通过反射获取实例异常", e);
-                    throw new RuntimeException("通过反射获取实例异常", e);
+                    throw new WalRecoverException("通过反射获取实例异常", e);
                 }
             }
         });
@@ -92,7 +87,7 @@ public class RecoverContext {
 	 * 
 	 * 调用方式如下（下面第一行代码是SpringBoot程序的启动代码）：
 	 * ConfigurableApplicationContext applicationContext = SpringApplication.run(Application.class, args);
-	 * RecoverContext.enableSpringContextRecover(new RetryDoRecoverExecuteBySpring(applicationContext));
+	 * RecoverContext.getInstance().enableSpringContextRecover(new RetryDoRecoverExecuteBySpring(applicationContext));
 	 * 
      * @param retryDoRecover
      */
@@ -101,26 +96,27 @@ public class RecoverContext {
     }
     
     
-    public Boolean recover(){
+    public Boolean recover(RecoverConfig recoverConfig){
         boolean result = true;
         try {
-            List<DataRecoverThread> readAheadLogList = Files
-                    .list(PathUtils.getWalRootPath())
-                    .map(path -> new DataRecoverThread(new ReadFileInstance(path)))
-                    .collect(Collectors.toList());
+            List<DataRecoverThread> dataRecoverThreadList = recoverConfig.getReadInstanceList()
+            		.stream()
+            		.map(ri -> new DataRecoverThread(ri))
+            		.collect(Collectors.toList());
 
-            ExecutorService executorService = Executors.newFixedThreadPool(readAheadLogList.size()>3 ? 3 : readAheadLogList.size());
+            ExecutorService executorService = Executors.newFixedThreadPool(dataRecoverThreadList.size()>3 ? 3 : dataRecoverThreadList.size());
 
-            result = executorService.invokeAll(readAheadLogList).stream()
+            result = executorService.invokeAll(dataRecoverThreadList).stream()
                     .allMatch(booleanFuture -> {
                         try {
                             return booleanFuture.get();
                         } catch (InterruptedException e) {
                             logger.error("获取数据恢复结果中断异常：", e);
+                            throw new WalRecoverException("获取数据恢复结果中断异常", e);
                         } catch (ExecutionException e) {
                             logger.error("获取数据恢复结果执行异常：", e);
+                            throw new WalRecoverException("获取数据恢复结果执行异常", e);
                         }
-                        return false;
                     });
 
             executorService.shutdown();
@@ -129,10 +125,9 @@ public class RecoverContext {
                 executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
                 logger.info("数据恢复线程执行完成，线程池已关闭");
             }
-        } catch (IOException e) {
-            logger.error("数据恢复IO异常：", e);
         } catch (InterruptedException e) {
-            logger.error("数据恢复中断异常：", e);
+            logger.error("数据恢复中断：", e);
+            throw new WalRecoverException("数据恢复中断", e);
         }
 
         return result;
@@ -164,8 +159,4 @@ public class RecoverContext {
 
     }
 
-	public void setRecoverConfig(RecoverConfig recoverConfig) {
-		this.recoverConfig = recoverConfig;
-	}
-    
 }

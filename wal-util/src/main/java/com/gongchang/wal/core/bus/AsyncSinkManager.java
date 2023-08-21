@@ -30,24 +30,38 @@ public class AsyncSinkManager {
     }
     
 
-    public synchronized AsyncSink getDefaultAsyncSink(){
+    public AsyncSink getDefaultAsyncSink(){
     	if(defaultSinkConfig==null){
-    		AsyncSinkBase asyncSinkBase = new AsyncSinkBase();
-    		asyncSinkMap.put(asyncSinkBase.getSinkConfig(), asyncSinkBase);
-    		setDefaultSinkConfig(asyncSinkBase.getSinkConfig());
+    		synchronized (this) {
+    			if(defaultSinkConfig==null){
+    				AsyncSinkInMemory asyncSinkInMemory = new AsyncSinkInMemory();
+    	    		asyncSinkMap.put(asyncSinkInMemory.getSinkConfig(), asyncSinkInMemory);
+    	    		setDefaultSinkConfig(asyncSinkInMemory.getSinkConfig());
+    			}
+			}
     	}
         return asyncSinkMap.get(defaultSinkConfig);
     }
     
-    public synchronized AsyncSink getAsyncSinkByConfig(SinkConfig sinkConfig){
-    	AsyncSink asyncSink = asyncSinkMap.get(defaultSinkConfig);
+    public AsyncSink getAsyncSinkByConfig(SinkConfig sinkConfig){
+    	AsyncSink asyncSink = asyncSinkMap.get(sinkConfig);
     	if(asyncSink==null){
-    		AsyncSinkBase asyncSinkBase = new AsyncSinkBase(sinkConfig);
-    		asyncSinkMap.put(asyncSinkBase.getSinkConfig(), asyncSinkBase);
-    		return asyncSinkBase;
-    	}else{
-    		return asyncSink;
+    		synchronized (this) {
+    			if(asyncSink==null){
+    				switch (sinkConfig.getCacheQuqueType()) {
+					case MEMORY:
+						asyncSink = new AsyncSinkInMemory(sinkConfig);
+						break;
+					case KAFKA:
+						throw new RuntimeException("该功能尚未实现");
+					default:
+						throw new RuntimeException("不支持的缓冲队列类型");
+					}
+    	    		asyncSinkMap.put(sinkConfig, asyncSink);
+    			}
+			}
     	}
+    	return asyncSinkMap.get(sinkConfig);
     }
 
 

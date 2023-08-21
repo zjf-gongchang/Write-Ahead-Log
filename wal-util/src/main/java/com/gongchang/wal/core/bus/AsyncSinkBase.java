@@ -1,58 +1,47 @@
 package com.gongchang.wal.core.bus;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.LockSupport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.gongchang.wal.core.base.WalConfig;
 import com.gongchang.wal.core.base.WalEntry;
-import com.gongchang.wal.core.write.WriteInstance;
 
-public class AsyncSinkBase implements AsyncSink {
+public abstract class AsyncSinkBase implements AsyncSink {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncSinkBase.class);
 
 
-    private SinkConfig sinkConfig;
-    
-    private WriteInstance writeInstance;
-
     private final ScheduledExecutorService scheduleExecutorService = Executors.newSingleThreadScheduledExecutor();
 
-    private LinkedBlockingDeque<WalEntry> walEntryQueue;
-
     private ExecutorService sinkExecutorService;
+    
+    
 
     private Long  checkPointId  = 0L;
 
     private AtomicLong logCount = new AtomicLong(0);
 
     private AtomicLong logSize = new AtomicLong(0);
+    
+    private AtomicBoolean committing = new AtomicBoolean(false);
 
-
-    protected AsyncSinkBase() {
-    	this(SinkConfig.getSinkConfigBuilder("wal").build());
-    }
 
     protected AsyncSinkBase(SinkConfig sinkConfig) {
-    	this.sinkConfig = sinkConfig;
-    	this.writeInstance = sinkConfig.getWriteInstance();
     	this.sinkExecutorService = sinkConfig.getSinkExecutorService();
     	this.scheduleExecutorService.scheduleWithFixedDelay(() -> {
             if(submitToSinkPool()){
@@ -63,49 +52,46 @@ public class AsyncSinkBase implements AsyncSink {
 
     public Boolean sink(WalEntry walEntry){
     	// 数据合法性校验，校验不通过则返回false
+    	if(!walEntry.getWalDataCheck().check(walEntry.getData())){
+    		return false;
+    	}
 
-        // 写预写日志
-        try {
-        	writeInstance.writeLog(walEntry);
-        } catch (IOException e) {
-            return false;
-        }
-
-        // 添加到队列
-        Boolean addResult = walEntryQueue.add(walEntry);
-
+    	// 数据预提交
+    	Boolean preCommit = preCommit(walEntry);
+    	
+    	// 唤醒Sink拉取线程
+    	
+    	
         // 检查提交检查点
         checkCommit(walEntry.getData().toJSONString().getBytes().length);
 
-        return addResult;
+        return preCommit;
     }
-
-    public Boolean commit(Long checkPointId) {
-        // 记录检查点信息
-        Path checkPointPath = Paths.get(System.getProperty("user.dir"), "wal", "checkpoint.txt");
-        try {
-            Files.write(checkPointPath, String.valueOf(checkPointId).getBytes(),StandardOpenOption.CREATE);
-        } catch (IOException e) {
-            logger.error("持久化检查点异常：", e);
-            return false;
-        }
-        return true;
-    }
-
+    
     private void checkCommit(int byteSize){
         if(logCount.incrementAndGet()>=WalConfig.CHECKPOINT_MAX_LOG_COUNT || logSize.addAndGet(byteSize)>=WalConfig.CHECKPOINT_MAX_LOG_SIZE){
-            scheduleExecutorService.submit(() -> {
-                if(submitToSinkPool()){
-                    commit(checkPointId);
-                }
-            });
+        	if(committing.compareAndSet(false, true)){
+        		scheduleExecutorService.submit(() -> {
+        			commit(checkPointId);
+        			committing.getAndSet(false);
+        		});
+            }
         }
     }
+    
+    public abstract Boolean preCommit(WalEntry walEntry);
+
+    public abstract Iterator<WalEntry> iterator();
+    
+    public abstract Boolean commit(Long checkPointId);
+    
+    
 
     private Boolean submitToSinkPool(){
         List<Future<Boolean>> futures = new ArrayList<>();
-        while(walEntryQueue.peek()!=null){
-            WalEntry walEntry = walEntryQueue.poll();
+        Iterator<WalEntry> iterator = iterator();
+        while(iterator.hasNext()){
+            WalEntry walEntry = iterator.next();
             Future<Boolean> future = sinkExecutorService.submit(new AsyncSinkThread(walEntry));
             futures.add(future);
             Long createTime = walEntry.getCreateTime();
@@ -144,8 +130,6 @@ public class AsyncSinkBase implements AsyncSink {
         }
     }
     
-    public SinkConfig getSinkConfig() {
-		return sinkConfig;
-	}
+  
 
 }

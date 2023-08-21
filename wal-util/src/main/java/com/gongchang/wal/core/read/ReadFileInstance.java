@@ -1,6 +1,5 @@
 package com.gongchang.wal.core.read;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Iterator;
 
@@ -19,18 +18,14 @@ public class ReadFileInstance implements ReadInstance {
 	
 	public ReadFileInstance(Path walParentPath) {
 		super();
-		try {
-			this.iterator = new ReadAheadLogFromFile(walParentPath).readLog();
-		} catch (IOException e) {
-			logger.error("构造读预写日志实例异常", e);
-			throw new RuntimeException("构造读预写日志实例异常");
-		}
+		this.iterator = new ReadAheadLogFromFile(walParentPath).readLog();
 	}
 
 
 
 	@Override
 	public Iterator<WalEntry> read() {
+		
 		return new Iterator<WalEntry>() {
 			
 			@Override

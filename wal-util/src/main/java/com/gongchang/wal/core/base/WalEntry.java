@@ -18,6 +18,11 @@ public class WalEntry {
      * 数据
      */
     private JSONObject data;
+    
+    /**
+     * 数据检查工具
+     */
+    private WalDataCheck walDataCheck;
 
     /**
      * 创建时间
@@ -129,8 +134,16 @@ public class WalEntry {
     public void setData(JSONObject data) {
         this.data = data;
     }
+    
+    public WalDataCheck getWalDataCheck() {
+		return walDataCheck;
+	}
 
-    public Long getCreateTime() {
+	public void setWalDataCheck(WalDataCheck walDataCheck) {
+		this.walDataCheck = walDataCheck;
+	}
+
+	public Long getCreateTime() {
         return createTime;
     }
 

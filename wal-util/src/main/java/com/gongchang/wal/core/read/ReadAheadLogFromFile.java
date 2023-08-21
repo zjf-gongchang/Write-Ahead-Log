@@ -10,8 +10,10 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.gongchang.wal.exception.WALReadException;
+
 /**
- * 读预写日志
+ * 从文件读预写日志
  */
 public class ReadAheadLogFromFile implements ReadAheadLog<String> {
 
@@ -26,7 +28,7 @@ public class ReadAheadLogFromFile implements ReadAheadLog<String> {
 
 
     @Override
-    public Iterator<String> readLog() throws IOException {
+    public Iterator<String> readLog() {
         Iterator<String> iterator = new Iterator<String>() {
             private List<Path> pathList = new LinkedList<>();
             Iterator<String> curLines;
@@ -37,7 +39,8 @@ public class ReadAheadLogFromFile implements ReadAheadLog<String> {
                             .filter(path -> path.getFileName().toString().indexOf("-")>0)
                             .forEach(path -> pathList.add(path));
                 } catch (IOException e) {
-                    logger.error("获取预写日志路径异常：", e);
+                    logger.error("获取需要恢复的预写日志路径异常：", e);
+                    throw new WALReadException("获取需要恢复的预写日志路径异常", e);
                 }
             }
 
@@ -49,7 +52,8 @@ public class ReadAheadLogFromFile implements ReadAheadLog<String> {
                         try {
 							curLines = Files.lines(nextPath).iterator();
 						} catch (IOException e) {
-							logger.error("读取预写日志异常", e);
+							logger.error("获取预写日志迭代器异常", e);
+							throw new WALReadException("获取预写日志迭代器异常", e);
 						}
                         if(curLines.hasNext()){
                             return true;

@@ -1,8 +1,5 @@
 package com.gongchang.wal;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.gongchang.wal.core.bus.RecoverConfig;
 import com.gongchang.wal.core.bus.RecoverContext;
 
@@ -11,19 +8,16 @@ import com.gongchang.wal.core.bus.RecoverContext;
  */
 public class WalRecoverUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger(WalRecoverUtils.class);
-    
     
     private static final RecoverContext recoverContext = RecoverContext.getInstance();
 
 
     public static Boolean recover(){
-    	return recoverContext.recover();
+    	return recoverContext.recover(RecoverConfig.getRecoverConfigBuilder().build());
     }
     
     public static Boolean recover(RecoverConfig recoverConfig){
-    	
-    	return true;
+    	return recoverContext.recover(recoverConfig);
     }
     
 }

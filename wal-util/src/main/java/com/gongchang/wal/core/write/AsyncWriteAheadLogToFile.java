@@ -29,7 +29,7 @@ public class AsyncWriteAheadLogToFile extends AbstractWriteAheadLogToFile<String
 	
 	private final ScheduledExecutorService writeLogExecutor = Executors.newSingleThreadScheduledExecutor();
 	
-	private static IOException ioException;
+	private static IOException writeException;
 	
 	private AtomicBoolean schedule = new AtomicBoolean(true);
 	
@@ -48,8 +48,8 @@ public class AsyncWriteAheadLogToFile extends AbstractWriteAheadLogToFile<String
 
 	@Override
 	public void writeLog(String value) throws IOException {
-		if(ioException!=null){
-			throw ioException;
+		if(writeException!=null){
+			throw writeException;
 		}
 		
 		cacheQueue.add(value);
@@ -78,7 +78,7 @@ public class AsyncWriteAheadLogToFile extends AbstractWriteAheadLogToFile<String
             bw.flush();
         }catch (IOException e) {
             logger.error("写入预写日志异常", e);
-            throw e;
+            throw new WALWriteException("写入预写日志异常", e);
         }
 	}
 	
@@ -115,8 +115,7 @@ public class AsyncWriteAheadLogToFile extends AbstractWriteAheadLogToFile<String
 				}
 			} catch (IOException e) {
 				logger.error("批量写日志异常", e);
-				ioException = e;
-				throw new WALWriteException("批量写日志异常", e);
+				writeException = e;
 			}
 		}
 		

@@ -11,6 +11,8 @@ import com.gongchang.wal.core.write.WriteFileInstance;
 import com.gongchang.wal.core.write.WriteInstance;
 
 public class SinkConfig {
+	
+	private CacheQuqueType cacheQuqueType;
 
 	private WriteInstance writeInstance;
 	
@@ -21,7 +23,7 @@ public class SinkConfig {
     private Long checkPointInterval;
     
 	
-	public SinkConfig(WriteInstance writeInstance, ExecutorService sinkExecutorService,
+	public SinkConfig(CacheQuqueType cacheQuqueType, WriteInstance writeInstance, ExecutorService sinkExecutorService,
 			LinkedBlockingDeque<WalEntry> walEntryQueue, Long checkPointInterval) {
 		super();
 		this.writeInstance = writeInstance;
@@ -40,6 +42,8 @@ public class SinkConfig {
 	}
 	
 	public static class SinkConfigBuilder{
+		
+		private CacheQuqueType cacheQuqueType = CacheQuqueType.MEMORY;
 		
 		private WriteInstance writeInstance;
 		
@@ -75,9 +79,14 @@ public class SinkConfig {
 	                TimeUnit.MILLISECONDS,
 	                new LinkedBlockingQueue<>(sinkPoolQueueSize));
 			LinkedBlockingDeque<WalEntry> walEntryQueue = new LinkedBlockingDeque<>(walQueueSize);
-			return new SinkConfig(writeInstance, sinkExecutorService, walEntryQueue, checkPointInterval);
+			return new SinkConfig(cacheQuqueType, writeInstance, sinkExecutorService, walEntryQueue, checkPointInterval);
 		}
 		
+
+		
+		public void setCacheQuqueType(CacheQuqueType cacheQuqueType) {
+			this.cacheQuqueType = cacheQuqueType;
+		}
 
 		public SinkConfigBuilder setSinkPoolInitThreadNum(Integer sinkPoolInitThreadNum) {
 			this.sinkPoolInitThreadNum = sinkPoolInitThreadNum;
@@ -111,6 +120,10 @@ public class SinkConfig {
 		
 	}
 	
+
+	public CacheQuqueType getCacheQuqueType() {
+		return cacheQuqueType;
+	}
 
 	public WriteInstance getWriteInstance() {
 		return writeInstance;

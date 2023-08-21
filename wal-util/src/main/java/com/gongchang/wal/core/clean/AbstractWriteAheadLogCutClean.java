@@ -44,7 +44,7 @@ public abstract class AbstractWriteAheadLogCutClean implements WriteAheadLogCutC
 	
 	
 	@Override
-	public void cutLog(Integer logSize) throws IOException {
+	public synchronized void cutLog(Integer logSize) throws IOException {
 		if(whetherToCut(logSize)){
             try {
             	cutWriteAheadLog();
@@ -56,7 +56,7 @@ public abstract class AbstractWriteAheadLogCutClean implements WriteAheadLogCutC
 	}
 	
 	@Override
-	public Boolean cleanLog(Path logParentPath) {
+	public synchronized Boolean cleanLog(Path logParentPath) {
 		try {
 			List<String> cleanLogNameList = getCleanLogName();
 			for (String cleanLogname : cleanLogNameList) {
