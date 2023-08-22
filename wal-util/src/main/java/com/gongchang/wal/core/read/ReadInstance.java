@@ -8,4 +8,6 @@ public interface ReadInstance {
 
 	public Iterator<WalEntry> read();
 	
+	public String getBusinessName();
+	
 }

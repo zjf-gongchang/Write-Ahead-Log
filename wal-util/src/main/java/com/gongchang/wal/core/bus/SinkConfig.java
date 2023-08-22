@@ -12,6 +12,8 @@ import com.gongchang.wal.core.write.WriteInstance;
 
 public class SinkConfig {
 	
+	private String businessName;
+	
 	private CacheQuqueType cacheQuqueType;
 
 	private WriteInstance writeInstance;
@@ -23,9 +25,10 @@ public class SinkConfig {
     private Long checkPointInterval;
     
 	
-	public SinkConfig(CacheQuqueType cacheQuqueType, WriteInstance writeInstance, ExecutorService sinkExecutorService,
+	public SinkConfig(String businessName, CacheQuqueType cacheQuqueType, WriteInstance writeInstance, ExecutorService sinkExecutorService,
 			LinkedBlockingDeque<WalEntry> walEntryQueue, Long checkPointInterval) {
 		super();
+		this.businessName = businessName;
 		this.writeInstance = writeInstance;
 		this.sinkExecutorService = sinkExecutorService;
 		this.walEntryQueue = walEntryQueue;
@@ -33,17 +36,16 @@ public class SinkConfig {
 	}
 
 	
-	public static SinkConfigBuilder getSinkConfigBuilder(String logName){
-		return new SinkConfigBuilder(logName);
+	public static SinkConfigBuilder getSinkConfigBuilder(String businessName){
+		return new SinkConfigBuilder(businessName);
 	}
 	
-	public static SinkConfigBuilder getSinkConfigBuilder(WriteInstance writeInstance){
-		return new SinkConfigBuilder(writeInstance);
-	}
 	
 	public static class SinkConfigBuilder{
 		
 		private CacheQuqueType cacheQuqueType = CacheQuqueType.MEMORY;
+		
+		private String businessName;
 		
 		private WriteInstance writeInstance;
 		
@@ -60,14 +62,10 @@ public class SinkConfig {
 		private Long checkPointInterval = 10*60L;
 
 
-		public SinkConfigBuilder(String logName) {
+		public SinkConfigBuilder(String businessName) {
 			super();
-			writeInstance = WriteFileInstance.getWriteInstanceBuilder(logName).enableLogCutForSize(Long.valueOf(1*1024*1024*1024)).build();
-		}
-		
-		public SinkConfigBuilder(WriteInstance writeInstance) {
-			super();
-			this.writeInstance = writeInstance;
+			this.businessName = businessName;
+			writeInstance = WriteFileInstance.getWriteInstanceBuilder(businessName).enableLogCutForSize(Long.valueOf(1*1024*1024*1024)).build();
 		}
 		
 		
@@ -79,11 +77,14 @@ public class SinkConfig {
 	                TimeUnit.MILLISECONDS,
 	                new LinkedBlockingQueue<>(sinkPoolQueueSize));
 			LinkedBlockingDeque<WalEntry> walEntryQueue = new LinkedBlockingDeque<>(walQueueSize);
-			return new SinkConfig(cacheQuqueType, writeInstance, sinkExecutorService, walEntryQueue, checkPointInterval);
+			return new SinkConfig(businessName, cacheQuqueType, writeInstance, sinkExecutorService, walEntryQueue, checkPointInterval);
 		}
 		
-
 		
+		public void setWriteInstance(WriteInstance writeInstance) {
+			this.writeInstance = writeInstance;
+		}
+
 		public void setCacheQuqueType(CacheQuqueType cacheQuqueType) {
 			this.cacheQuqueType = cacheQuqueType;
 		}
@@ -120,6 +121,10 @@ public class SinkConfig {
 		
 	}
 	
+
+	public String getBusinessName() {
+		return businessName;
+	}
 
 	public CacheQuqueType getCacheQuqueType() {
 		return cacheQuqueType;

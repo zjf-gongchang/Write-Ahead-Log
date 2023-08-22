@@ -13,12 +13,15 @@ public class ReadFileInstance implements ReadInstance {
 	private static final Logger logger = LoggerFactory.getLogger(ReadFileInstance.class);
 	 
 
-	Iterator<String> iterator;
+	private Iterator<String> iterator;
+	
+	private String businessName;
 	
 	
 	public ReadFileInstance(Path walParentPath) {
 		super();
 		this.iterator = new ReadAheadLogFromFile(walParentPath).readLog();
+		this.businessName = walParentPath.getFileName().toString();
 	}
 
 
@@ -36,11 +39,16 @@ public class ReadFileInstance implements ReadInstance {
 			@Override
 			public WalEntry next() {
 				String metaMemtroStr = iterator.next();
-				WalEntry walEntry = WalEntry.metaFromMementoStr(metaMemtroStr).metaToWalEntry();
-				return walEntry;
+				return new WalEntry().sdFromMementoStr(metaMemtroStr);
 			}
 			
 		};
+	}
+
+
+	@Override
+	public String getBusinessName() {
+		return businessName;
 	}
 
 }

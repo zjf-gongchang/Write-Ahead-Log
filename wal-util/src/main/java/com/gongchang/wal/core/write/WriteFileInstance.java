@@ -108,7 +108,7 @@ public class WriteFileInstance implements WriteInstance {
 
 	@Override
 	public void writeLog(WalEntry walEntry) throws IOException {
-		writeAheadLog.writeLog(walEntry.metaToMementoStr());
+		writeAheadLog.writeLog(walEntry.sdToMementoStr());
 	}
 	
 }

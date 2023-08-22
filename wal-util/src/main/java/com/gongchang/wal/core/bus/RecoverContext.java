@@ -1,5 +1,9 @@
 package com.gongchang.wal.core.bus;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -14,6 +18,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.gongchang.wal.core.base.WalConstant;
 import com.gongchang.wal.core.base.WalEntry;
 import com.gongchang.wal.core.read.ReadInstance;
 import com.gongchang.wal.core.redo.AbstractRetryDoRecover;
@@ -137,9 +142,23 @@ public class RecoverContext {
     private static class DataRecoverThread implements Callable<Boolean>{
 
         private ReadInstance readInstance;
+        
+        private Long barrieId;
 
         public DataRecoverThread(ReadInstance readInstance) {
                 this.readInstance = readInstance;
+                Path checkPointPath = Paths.get(System.getProperty("user.dir"), WalConstant.WAL_ROOT_CATALOG, readInstance.getBusinessName(), "checkpoint.txt");
+                try {
+                	if(Files.exists(checkPointPath)){
+                		byte[] readAllBytes = Files.readAllBytes(checkPointPath);
+                		barrieId = Long.parseLong(new String(readAllBytes));
+                	}else{
+                		barrieId = Long.MIN_VALUE;
+                	}
+				} catch (IOException e) {
+					logger.error("读取检查点信息异常", e);
+					throw new WalRecoverException("读取检查点信息异常", e);
+				}
         }
 
         @Override
@@ -148,11 +167,13 @@ public class RecoverContext {
             Boolean result = true;
             while (iterator.hasNext()){
             	WalEntry walEntry = iterator.next();
-                Boolean redoResult = walEntry.getRetryDo().redo(walEntry);
-                if(!redoResult){
-                    result = false;
-                    break;
-                }
+            	if(walEntry.getBarrieId()>barrieId){
+            		Boolean redoResult = walEntry.getRetryDo().redo(walEntry);
+            		if(!redoResult){
+            			result = false;
+            			break;
+            		}
+            	}
             }
             return result;
         }

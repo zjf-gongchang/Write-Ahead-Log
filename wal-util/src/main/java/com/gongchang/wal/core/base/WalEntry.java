@@ -7,7 +7,7 @@ import com.gongchang.wal.core.redo.RetryDo;
 import com.gongchang.wal.core.redo.RetryDoRecover;
 
 
-public class WalEntry {
+public class WalEntry implements StreamData {
 
     /**
      * 恢复数据的类的实例对象
@@ -18,44 +18,52 @@ public class WalEntry {
      * 数据
      */
     private JSONObject data;
-    
-    /**
-     * 数据检查工具
-     */
-    private WalDataCheck walDataCheck;
 
     /**
      * 创建时间
      */
-    private Long createTime = System.currentTimeMillis();
-
+    private Long barrieId;
+    
+    
+    public WalEntry() {}
 
     public WalEntry(RetryDo retryDo, JSONObject data) {
-        this.retryDo = retryDo;
-        this.data = data;
+        this(retryDo, data, System.currentTimeMillis());
     }
 
-    private WalEntry(RetryDo retryDo, JSONObject data, Long createTime) {
+    private WalEntry(RetryDo retryDo, JSONObject data, Long barrieId) {
         this.retryDo = retryDo;
         this.data = data;
-        this.createTime = createTime;
+        this.barrieId = barrieId;
     }
 
-    public String metaToMementoStr() {
+    @Override
+    public String sdToMementoStr() {
         WalEntryMeta walEntryMeta = new WalEntryMeta(
-                retryDo.getClass().getName(),
+                retryDo.getClass().getCanonicalName(),
                 retryDo.getRecoverBy().name(),
                 data,
-                createTime);
-        return JSON.toJSONString(walEntryMeta);
+                barrieId);
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("type", getStreamDataType());
+        jsonObject.put("meta", walEntryMeta);
+        return JSON.toJSONString(jsonObject);
     }
 
-    public static WalEntryMeta metaFromMementoStr(String metaStr){
-        JSONObject metaJsonObj = JSON.parseObject(metaStr);
+    @SuppressWarnings("unchecked")
+	@Override
+    public WalEntry sdFromMementoStr(String metaStr){
+        JSONObject metaJsonObj = JSON.parseObject(metaStr).getJSONObject("meta");
         WalEntryMeta walEntryMeta = metaJsonObj.toJavaObject(WalEntryMeta.class);
-        return walEntryMeta;
+        walEntryMeta.metaToWalEntry(this);
+        return this;
     }
-
+    
+    @Override
+	public StreamDataType getStreamDataType() {
+		return StreamDataType.BUSINESS;
+	}
+    
 
     public static class WalEntryMeta{
 
@@ -65,22 +73,30 @@ public class WalEntry {
 
         private JSONObject dada;
 
-        private Long createTime;
+        private Long barrieId;
+        
 
-
-        public WalEntryMeta(String retryDoClassName, String retryDoRecoverBy, JSONObject dada, Long createTime) {
+        public WalEntryMeta(String retryDoClassName, String retryDoRecoverBy, JSONObject dada, Long barrieId) {
             this.retryDoClassName = retryDoClassName;
             this.retryDoRecoverBy = retryDoRecoverBy;
             this.dada = dada;
-            this.createTime = createTime;
+            this.barrieId = barrieId;
         }
 
 
         public WalEntry metaToWalEntry(){
             RetryDoRecover retryDoRecover = RecoverContext.getInstance().requestRetryDoRecover(retryDoRecoverBy);
             RetryDo retryDo = retryDoRecover.recover(retryDoClassName);
-            WalEntry walEntry = new WalEntry(retryDo, dada, createTime);
+            WalEntry walEntry = new WalEntry(retryDo, dada, barrieId);
             return walEntry;
+        }
+        
+        public void metaToWalEntry(WalEntry walEntry){
+        	RetryDoRecover retryDoRecover = RecoverContext.getInstance().requestRetryDoRecover(retryDoRecoverBy);
+        	RetryDo retryDo = retryDoRecover.recover(retryDoClassName);
+        	walEntry.setRetryDo(retryDo);
+        	walEntry.setData(dada);
+        	walEntry.setBarrieId(barrieId);
         }
 
 
@@ -108,12 +124,12 @@ public class WalEntry {
             this.dada = dada;
         }
 
-        public Long getCreateTime() {
-            return createTime;
+        public Long getBarrieId() {
+            return barrieId;
         }
 
-        public void setCreateTime(Long createTime) {
-            this.createTime = createTime;
+        public void setBarrieId(Long barrieId) {
+            this.barrieId = barrieId;
         }
 
     }
@@ -135,20 +151,12 @@ public class WalEntry {
         this.data = data;
     }
     
-    public WalDataCheck getWalDataCheck() {
-		return walDataCheck;
-	}
-
-	public void setWalDataCheck(WalDataCheck walDataCheck) {
-		this.walDataCheck = walDataCheck;
-	}
-
-	public Long getCreateTime() {
-        return createTime;
+	public Long getBarrieId() {
+        return barrieId;
     }
 
-    public void setCreateTime(Long createTime) {
-        this.createTime = createTime;
+    public void setBarrieId(Long barrieId) {
+        this.barrieId = barrieId;
     }
 
 }
