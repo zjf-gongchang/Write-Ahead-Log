@@ -8,7 +8,7 @@ public class ReflectTestRetryDo implements RetryDo{
 
 	@Override
 	public Boolean redo(WalEntry walEntry) {
-		System.out.println(walEntry.sdToMementoStr());
+		System.out.println("请求数据："+walEntry.sdToMementoStr());
 		return true;
 	}
 

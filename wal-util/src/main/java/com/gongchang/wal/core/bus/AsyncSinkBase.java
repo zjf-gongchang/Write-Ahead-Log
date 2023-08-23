@@ -7,14 +7,13 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Iterator;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.LockSupport;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,11 +30,11 @@ public abstract class AsyncSinkBase implements AsyncSink {
 
     private final ScheduledExecutorService scheduleExecutorService = Executors.newSingleThreadScheduledExecutor();
 
-    private final ReentrantLock consumeLock = new ReentrantLock();
-    
-    private final Condition consumeCondition = consumeLock.newCondition();
+    private CyclicBarrier consumeCyclicBarrier = new CyclicBarrier(2);
     
     private AtomicReference<Barrie> currBarrie = new AtomicReference<>(new Barrie());
+    
+    private AtomicBoolean consumeWaiting = new AtomicBoolean(true);
     
     private ExecutorService sinkExecutorService;
     
@@ -62,22 +61,20 @@ public abstract class AsyncSinkBase implements AsyncSink {
     }
 
     public Boolean sink(WalEntry walEntry){
-    	try {
-    		// 数据合法性校验，校验不通过则返回false
-    		
-    		// 数据预提交
-//    		consumeLock.lock();
-    		walEntry.setBarrieId(currBarrie.get().getBarrieId());
-    		Boolean preCommit = preCommit(walEntry);
-    		// 唤醒Sink消费线程
-    		if(preCommit){
-//    			consumeCondition.notifyAll();
-    		}
-    		// 返回处理结果
-            return preCommit;
-		} finally {
-//			consumeLock.unlock();
-		}
+    	// 数据合法性校验，校验不通过则返回false
+    	
+    	// 数据预提交
+    	walEntry.setBarrieId(currBarrie.get().getBarrieId());
+    	Boolean preCommit = preCommit(walEntry);
+    	// 唤醒Sink消费线程
+    	if(preCommit && consumeWaiting.compareAndSet(true, false)){
+    		try {
+				consumeCyclicBarrier.await(1, TimeUnit.NANOSECONDS);
+			} catch (Exception e) {
+			} 
+    	}
+    	// 返回处理结果
+    	return preCommit;
     }
     
     public Boolean commit(Long checkPointId) {
@@ -101,38 +98,31 @@ public abstract class AsyncSinkBase implements AsyncSink {
     
 
     private void submitToSinkPool(){
-    	try {
-//    		consumeLock.lock();
-    		
-    		Iterator<StreamData> iterator = consume();
-    		
-    		while(true){
-    			while(iterator.hasNext()){
-    				StreamData sd = iterator.next();
-    				switch (sd.getStreamDataType()) {
-    				case BARRIE:
-    					Barrie barrie = (Barrie)sd;
-    					commit(barrie.getBarrieId());
-    					break;
-    				case BUSINESS:
-    					sinkExecutorService.submit(new AsyncSinkThread((WalEntry)sd));
-    					break;
-    				default:
-    					throw new RuntimeException("无法解析的流数据类型");
-    				}
-    			}
-    			
-    			/*try {
-    				System.out.println("============================");
-	    			consumeCondition.await();
-	    			System.out.println("---------------------------");
-	    		} catch (InterruptedException e) {
-	    			logger.error("消费线程等待中断", e);
-	    		}*/
+    	Iterator<StreamData> iterator = consume();
+    	
+    	while(true){
+    		if(consumeWaiting.compareAndSet(false, true)){
+    			try {
+    				consumeCyclicBarrier.await();
+    			} catch (Exception e) {
+    			} 
     		}
-		} finally {
-//			consumeLock.unlock();
-		}
+    		
+    		while(iterator.hasNext()){
+    			StreamData sd = iterator.next();
+    			switch (sd.getStreamDataType()) {
+    			case BARRIE:
+    				Barrie barrie = (Barrie)sd;
+    				commit(barrie.getBarrieId());
+    				break;
+    			case BUSINESS:
+    				sinkExecutorService.submit(new AsyncSinkThread((WalEntry)sd));
+    				break;
+    			default:
+    				throw new RuntimeException("无法解析的流数据类型");
+    			}
+    		}
+    	}
     }
 
     private class AsyncSinkThread implements Callable<Boolean>{
