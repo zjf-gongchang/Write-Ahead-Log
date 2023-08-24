@@ -3,14 +3,14 @@ package com.gongchang.wal.core.base;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 
-public class Barrie implements StreamData {
+public class Barrier implements StreamData {
 
 	private Long barrieId;
 	
 	private Integer channel;
 	
 	
-	public Barrie() {
+	public Barrier() {
 		super();
 		this.barrieId = System.currentTimeMillis();
 		this.channel = 0;
@@ -27,10 +27,10 @@ public class Barrie implements StreamData {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Barrie sdFromMementoStr(String str) {
+	public Barrier sdFromMementoStr(String str) {
 		JSONObject metaObject = JSON.parseObject(str).getJSONObject("meta");
-		Barrie barrie = metaObject.toJavaObject(Barrie.class);
-		return barrie;
+		Barrier barrier = metaObject.toJavaObject(Barrier.class);
+		return barrier;
 	}
 
 

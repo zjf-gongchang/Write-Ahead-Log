@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.gongchang.wal.core.base.Barrie;
+import com.gongchang.wal.core.base.Barrier;
 import com.gongchang.wal.core.base.StreamData;
 import com.gongchang.wal.core.base.WalConstant;
 import com.gongchang.wal.core.base.WalEntry;
@@ -32,7 +32,7 @@ public abstract class AsyncSinkBase implements AsyncSink {
 
     private CyclicBarrier consumeCyclicBarrier = new CyclicBarrier(2);
     
-    private AtomicReference<Barrie> currBarrie = new AtomicReference<>(new Barrie());
+    private AtomicReference<Barrier> currBarrie = new AtomicReference<>(new Barrier());
     
     private AtomicBoolean consumeWaiting = new AtomicBoolean(true);
     
@@ -45,8 +45,8 @@ public abstract class AsyncSinkBase implements AsyncSink {
     	this.sinkExecutorService = sinkConfig.getSinkExecutorService();
     	this.scheduleExecutorService.scheduleWithFixedDelay(() -> {
             // 广播发送检查点信息
-    		Barrie preBarrie = currBarrie.get();
-    		if(currBarrie.compareAndSet(preBarrie, new Barrie())){
+    		Barrier preBarrie = currBarrie.get();
+    		if(currBarrie.compareAndSet(preBarrie, new Barrier())){
     			broadcast(preBarrie);
     		}
         }, 0, sinkConfig.getCheckPointInterval(), TimeUnit.SECONDS);
@@ -94,7 +94,7 @@ public abstract class AsyncSinkBase implements AsyncSink {
 
     public abstract Iterator<StreamData> consume();
     
-    public abstract Boolean broadcast(Barrie barrie);
+    public abstract Boolean broadcast(Barrier barrier);
     
 
     private void submitToSinkPool(){
@@ -112,8 +112,8 @@ public abstract class AsyncSinkBase implements AsyncSink {
     			StreamData sd = iterator.next();
     			switch (sd.getStreamDataType()) {
     			case BARRIE:
-    				Barrie barrie = (Barrie)sd;
-    				commit(barrie.getBarrieId());
+    				Barrier barrier = (Barrier)sd;
+    				commit(barrier.getBarrieId());
     				break;
     			case BUSINESS:
     				sinkExecutorService.submit(new AsyncSinkThread((WalEntry)sd));

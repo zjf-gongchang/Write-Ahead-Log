@@ -7,7 +7,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.gongchang.wal.core.base.Barrie;
+import com.gongchang.wal.core.base.Barrier;
 import com.gongchang.wal.core.base.StreamData;
 import com.gongchang.wal.core.base.WalConfig;
 import com.gongchang.wal.core.base.WalEntry;
@@ -69,8 +69,8 @@ public class AsyncSinkInMemory extends AsyncSinkBase {
 	}
 
 	@Override
-	public Boolean broadcast(Barrie barrie) {
-		return walEntryQueue.add(barrie);
+	public Boolean broadcast(Barrier barrier) {
+		return walEntryQueue.add(barrier);
 	}
 
 }
